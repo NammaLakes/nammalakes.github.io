@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -11,15 +9,8 @@ import { Card } from "@/components/ui/card";
 import { InteractiveHoverButton } from "@/components/magicui/interactive-hover-button";
 import { MorphingText } from "@/components/magicui/morphing-text";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion"
-
-
-const morphingTexts = [
-  "మా సరస్సులు",
-  "ನಮ್ಮ ಕೆರೆಗಳು",
-  "हमारी झीलें",
-  "आमचे तलाव",
-  "Namma Lakes",
-];
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const stories = [
   {
@@ -29,22 +20,19 @@ const stories = [
     author: "- Local Environmental Activist"
   },
 ];
-import { MorphingText } from "@/components/magicui/morphing-text";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion";
-import AOS from "aos";
-import "aos/dist/aos.css";
 
 const morphingTexts = [
-  "మా సరస్సులు",
-  "ನಮ್ಮ ಕೆರೆಗಳು",
-  "हमारी झीलें",
-  "आमचे तलाव",
   "Namma Lakes",
+  "私たちの湖",
+  "हमारी झीलें",
+  "наши озера",
+  "మా సరస్సులు",
+  "我們的湖泊",
+  "ನಮ್ಮ ಕೆರೆಗಳು",
+  "ہمارے جھیلیں",
+  "Οι λίμνες μας",
+  "Nuestros lagos",
 ];
-
-export function MorphingTextDemo() {
-  return <MorphingText texts={morphingTexts} />;
-}
 
 const impact = [
   {
@@ -88,58 +76,9 @@ const Loader = () => (
 `}</style>
 
 export default function Home() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // Simulate a loading time of 2 seconds
-    return () => clearTimeout(timer);
-  }, []);
-
-  const toggleAccordion = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
-  function MorphingTextDemo() {
-    return <MorphingText texts={morphingTexts} />;
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader />
-      </div>
-    );
-  }
-const impact = [
-  {
-    icon: <Heart className="h-6 w-6 text-red-500" />,
-    title: "Community Impact",
-    description: "Supporting over 100,000 residents with clean and monitored water bodies.",
-  },
-  {
-    icon: <Droplets className="h-6 w-6 text-blue-500" />,
-    title: "Water Quality",
-    description: "Maintaining optimal water quality through 24/7 monitoring and quick response systems.",
-  },
-  {
-    icon: <Users className="h-6 w-6 text-green-500" />,
-    title: "Local Engagement",
-    description: "Empowering communities with real-time data and educational initiatives.",
-  },
-  {
-    icon: <LineChart className="h-6 w-6 text-purple-500" />,
-    title: "Sustainable Future",
-    description: "Building a data-driven approach to water resource management.",
-  }
-];
-
-export default function Home() {
   const [openIndex, setOpenIndex] = useState(null);
   const [scrollY, setScrollY] = useState(0);
-  const storyContainerRef = useRef(null);
+  const storyContainerRef = useRef<HTMLDivElement>(null);
   const [storyProgress, setStoryProgress] = useState(0);
   
   // Initialize AOS
@@ -186,10 +125,11 @@ export default function Home() {
     };
   }, []);
 
-  const toggleAccordion = (index) => {
+  const toggleAccordion = (index: any) => {
     setOpenIndex(openIndex === index ? null : index);
   };
-  
+
+
   // Determine which story phase to show based on scroll progress
   const getStoryPhase = () => {
     if (storyProgress < 0.2) return 0; // Newspaper article
@@ -288,68 +228,6 @@ export default function Home() {
         </div>
       </section>
 
-       {/* Showcase Section */}
-       <section className="py-24 bg-gradient-to-b from-background via-purple-100/20 dark:via-purple-900/20 to-background">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-6"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                Ideation Phase
-              </h2>
-              <p className="text-muted-foreground text-lg">
-                It all started with an article from a local newspaper.
-              </p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="relative"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur-2xl opacity-20 transform rotate-6" />
-              <img
-                alt="some img"
-                className="rounded-2xl shadow-xl relative z-10"
-              />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trip Planning Section */}
-      <section className="py-24 bg-gradient-to-b from-background via-cyan-100/20 dark:via-cyan-900/20 to-background">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="order-2 md:order-1 relative"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur-2xl opacity-20 transform -rotate-6" />
-              <img
-                alt="some img"
-                className="rounded-2xl shadow-xl relative z-10"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="order-1 md:order-2 space-y-6"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                Development Phase
-              </h2>
-              <p className="text-muted-foreground text-lg">
-                All laptops whiring and keyboards getting smashed to finish writing the software.
-              </p>
-            </motion.div>
       {/* Our Story Section - Apple Style */}
       <section 
         ref={storyContainerRef}
@@ -497,25 +375,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-
-      {/* Parallax Photo Section */}
-      <section className="relative h-[50vh] md:h-[80vh] overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 bg-blue-900 opacity-30"></div>
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ 
-            backgroundImage: "url('/lake-banner.jpg')", 
-            transform: `translateY(${scrollY * 0.15}px)`
-          }}
-        ></div>
-        <div className="container relative z-10 text-center text-white">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">Protecting Our Waters</h2>
-          <p className="text-xl md:text-2xl max-w-3xl mx-auto">
-            More than technology - a movement to preserve our natural heritage
-          </p>
         </div>
       </section>
 
