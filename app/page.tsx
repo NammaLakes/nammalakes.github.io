@@ -19,10 +19,6 @@ const morphingTexts = [
   "Namma Lakes",
 ];
 
-export function MorphingTextDemo() {
-  return <MorphingText texts={morphingTexts} />;
-}
-
 const stories = [
   {
     image: "https://images.unsplash.com/photo-1621451537084-482c73073a0f?auto=format&fit=crop&q=80",
@@ -56,12 +52,49 @@ const impact = [
 ];
 
 
+
+const Loader = () => (
+  <div className="w-24 h-24 relative loader">
+  </div>
+);
+
+<style jsx>{`
+  @keyframes wave {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+`}</style>
+
 export default function Home() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000); // Simulate a loading time of 2 seconds
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleAccordion = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  function MorphingTextDemo() {
+    return <MorphingText texts={morphingTexts} />;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -172,14 +205,6 @@ export default function Home() {
               <p className="text-muted-foreground text-lg">
                 All laptops whiring and keyboards getting smashed to finish writing the software.
               </p>
-              <Link href="/auth/signup">
-                <Button
-                  size="lg"
-                  className="rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-border"
-                >
-                  Start Planning
-                </Button>
-              </Link>
             </motion.div>
           </div>
         </div>
