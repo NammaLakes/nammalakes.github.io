@@ -84,8 +84,8 @@ Whether you’re a developer, environmentalist, or curious citizen, we welcome c
 To get started locally:
 
 ```bash
-git clone https://github.com/your-org/namma-lakes.git
-cd namma-lakes
+git clone https://github.com/NammaLakes/nammalakes.git
+cd nammalakes
 ```
 
 Install Python packages:
@@ -159,5 +159,5 @@ We review PRs regularly and are happy to collaborate.
 ## Contact
 
 For questions, collaboration, or demo access, reach out at:  
-`contact@namma-lakes.org`  
+`contact@nammalakes.org`  
 Or open an issue on this repository.
