@@ -1,5 +1,5 @@
-@tailwind base;
 @tailwind components;
+@tailwind base;
 @tailwind utilities;
 
 :root {
@@ -81,7 +81,27 @@
   }
 }
 
-@keyframes breathingBlue {
+/* Add these to your existing global CSS */
+
+:root {
+  --mouse-x: 0px;
+  --mouse-y: 0px;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.hover-rotate {
+  transition: transform 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.hover-rotate:hover {
+  transform: translateZ(20px) rotateX(2deg) rotateY(2deg);
+}
+
+@keyframes gradient-x {
   0% {
     background-position: 0% 50%;
   }
@@ -92,50 +112,18 @@
     background-position: 0% 50%;
   }
 }
-.morphing-gradient {
-  background: linear-gradient(-37deg, #0062ff, #00c6ff, #0051e5, #00a3ff, #2575fc, #0084ff, #00b8ff, #003dcc, #0072e5, #1a90ff);
-  background-size: 300% 300%;
-  animation: breathingBlue 20s ease-in-out infinite alternate;
-  transition: background-position 1s ease;
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+  background-size: 400% 400%;
 }
 
-@keyframes breathingBlue {
-  0% {
-    background-position: 0% 25%;
-  }
-  25% {
-    background-position: 50% 100%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  75% {
-    background-position: 50% 0%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
 
-/* HTML: <div class="loader"></div> */
-.loader {
-  display: inline-grid;
-  padding: 5px;
-  background: #fff;
-  filter: contrast(12);
-}
-.loader:before {
-  content: "";
-  height: 40px;
-  aspect-ratio: 3;
-  --c: #0000 64%,#000 66% 98%,#0000 101%;
-  background:
-    radial-gradient(35% 146% at 50% 159%,var(--c)) 0 0,
-    radial-gradient(35% 146% at 50% -59%,var(--c)) 100% 100%;
-  background-size: calc(200%/3) 50%;
-  background-repeat: repeat-x;
-  animation: l11 .8s infinite linear;
-}
-@keyframes l11{
-  to {background-position: -200% 0,-100% 100%}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
