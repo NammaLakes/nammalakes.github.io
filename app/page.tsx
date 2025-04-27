@@ -2,491 +2,956 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, Heart, Droplets, Users, LineChart, Shield } from "lucide-react";
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
+import { Heart, Droplets, Users, LineChart, ArrowDown, ChevronDown, Waves, Shield, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { InteractiveHoverButton } from "@/components/magicui/interactive-hover-button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { ParticleBackground } from "@/components/ParticleBackground";
 import { MorphingText } from "@/components/magicui/morphing-text";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion"
-import AOS from "aos";
-import "aos/dist/aos.css";
 
-const morphingTexts = [
-  "Namma Lakes",
-  "私たちの湖",
+const morphingText = [
   "हमारी झीलें",
-  "наши озера",
-  "మా సరస్సులు",
-  "我們的湖泊",
   "ನಮ್ಮ ಕೆರೆಗಳು",
-  "ہمارے جھیلیں",
-  "Οι λίμνες μας",
-  "Nuestros lagos",
+  "Namma Lakes",
+  "మా సరస్సులు",
 ];
 
-const impact = [
+const features = [
   {
-    icon: <Heart className="h-6 w-6 text-red-500" />,
-    title: "Community Impact",
-    description: "Supporting over 100,000 residents with clean and monitored water bodies.",
+    icon: <Waves className="h-10 w-10 text-blue-600" />,
+    title: "Real-time Monitoring",
+    description: "Get continuous water quality data from distributed sensors with high precision."
   },
   {
-    icon: <Droplets className="h-6 w-6 text-blue-500" />,
-    title: "Water Quality",
-    description: "Maintaining optimal water quality through 24/7 monitoring and quick response systems.",
+    icon: <Database className="h-10 w-10 text-green-600" />,
+    title: "Open Data Platform",
+    description: "Access all collected data through our API and interactive dashboards."
   },
   {
-    icon: <Users className="h-6 w-6 text-green-500" />,
-    title: "Local Engagement",
-    description: "Empowering communities with real-time data and educational initiatives.",
+    icon: <Shield className="h-10 w-10 text-purple-600" />,
+    title: "Early Warning System",
+    description: "Receive alerts when water quality parameters reach critical thresholds."
   },
   {
-    icon: <LineChart className="h-6 w-6 text-purple-500" />,
-    title: "Sustainable Future",
-    description: "Building a data-driven approach to water resource management.",
+    icon: <Users className="h-10 w-10 text-amber-600" />,
+    title: "Community Engagement",
+    description: "Connect with local volunteers and organizations to protect your water bodies."
   }
 ];
 
-
-const Loader = () => (
-  <div className="w-24 h-24 relative loader">
-  </div>
-);
-
-<style jsx>{`
-  @keyframes wave {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.1);
-    }
-  }
-`}</style>
+const storyPhases = [
+  {
+    title: "The Spark",
+    description: "It all started with an article highlighting the deteriorating condition of our beloved lakes.",
+    icon: "📰",
+  },
+  {
+    title: "Research & Discovery",
+    description: "Months spent researching monitoring systems and identifying the need for affordable, open-source solutions.",
+    icon: "🔬",
+  },
+  {
+    title: "Building the Prototype",
+    description: "Building our first working prototype with Raspberry Pi and sensors.",
+    icon: "💻",
+  },
+  {
+    title: "First Deployment",
+    description: "The excitement of seeing real-time data flow in from Bellandur Lake.",
+    icon: "🛰️",
+  },
+  {
+    title: "Community Adoption",
+    description: "Local communities embracing the technology and taking action to protect their lakes.",
+    icon: "🤝",
+  },
+];
 
 export default function Home() {
-  const [openIndex, setOpenIndex] = useState(null);
-  const [scrollY, setScrollY] = useState(0);
-  const storyContainerRef = useRef<HTMLDivElement>(null);
-  const [storyProgress, setStoryProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState(0);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
-  // Initialize AOS
+  // Refs for each section
+  const heroRef = useRef(null);
+  const missionRef = useRef(null);
+  const featuresRef = useRef(null);
+  const storyRef = useRef(null);
+  const getStartedRef = useRef(null);
+
+  // Use InView to determine which section is active
+  const heroInView = useInView(heroRef, { amount: 0.5 });
+  const missionInView = useInView(missionRef, { amount: 0.3 });
+  const featuresInView = useInView(featuresRef, { amount: 0.3 });
+  const storyInView = useInView(storyRef, { amount: 0.3 });
+  const getStartedInView = useInView(getStartedRef, { amount: 0.3 });
+
+  // Update active section based on which ref is in view
   useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: false,
-      mirror: true,
-    });
-  }, []);
-  
-  // Handle scroll for the story section
+    if (heroInView) setActiveSection(0);
+    else if (missionInView) setActiveSection(1);
+    else if (featuresInView) setActiveSection(2);
+    else if (storyInView) setActiveSection(3);
+    else if (getStartedInView) setActiveSection(5);
+  }, [heroInView, missionInView, featuresInView, storyInView, getStartedInView]);
+
+  // Track mouse position for gradient effects
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-      
-      if (storyContainerRef.current) {
-        const element = storyContainerRef.current;
-        const rect = element.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        
-        // Calculate progress through the story section (0 to 1)
-        let progress = 0;
-        
-        // When the element comes into view
-        if (rect.top < windowHeight && rect.bottom > 0) {
-          // How far through the section we've scrolled (0 to 1)
-          progress = 1 - (rect.bottom / (rect.height + windowHeight));
-          // Clamp between 0 and 1
-          progress = Math.max(0, Math.min(1, progress * 1.5));
-        } else if (rect.bottom <= 0) {
-          progress = 1; // Past the section
-        }
-        
-        setStoryProgress(progress);
-      }
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      document.documentElement.style.setProperty('--mouse-x', `${clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${clientY}px`);
+      setMousePosition({ x: clientX, y: clientY });
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial call
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const toggleAccordion = (index: any) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
-
-  // Determine which story phase to show based on scroll progress
-  const getStoryPhase = () => {
-    if (storyProgress < 0.2) return 0; // Newspaper article
-    if (storyProgress < 0.4) return 1; // Research phase
-    if (storyProgress < 0.6) return 2; // Prototyping
-    if (storyProgress < 0.8) return 3; // First deployment
-    return 4; // Community adoption
-  };
-  
-  const storyPhase = getStoryPhase();
-  
-  // Define content for each phase
-  const storyPhases = [
-    {
-      title: "The Spark",
-      description: "It all started with an article in a local newspaper highlighting the deteriorating condition of our beloved lakes.",
-      imageSrc: "/story/newspaper.jpg",
-      imageAlt: "Newspaper article about lake pollution",
-      imageClassName: "scale-100 opacity-100"
-    },
-    {
-      title: "Research & Discovery",
-      description: "Our team spent months researching existing monitoring systems and identifying the need for affordable, open-source solutions.",
-      imageSrc: "/story/research.jpg",
-      imageAlt: "Team conducting research",
-      imageClassName: "scale-110 opacity-100"
-    },
-    {
-      title: "Building the Prototype",
-      description: "Laptops whirring, keyboards clacking - building our first working prototype with Raspberry Pi and sensors.",
-      imageSrc: "/story/prototype.jpg",
-      imageAlt: "Building prototype sensors",
-      imageClassName: "scale-120 opacity-100"
-    },
-    {
-      title: "First Deployment",
-      description: "The excitement of seeing real-time data flow in as we deployed our first sensors at Bellandur Lake.",
-      imageSrc: "/story/deployment.jpg",
-      imageAlt: "Deploying sensors at the lake",
-      imageClassName: "scale-130 opacity-100"
-    },
-    {
-      title: "Community Adoption",
-      description: "Local communities embracing the technology, learning to interpret the data, and taking action to protect their lakes.",
-      imageSrc: "/story/community.jpg",
-      imageAlt: "Community members using the system",
-      imageClassName: "scale-140 opacity-100"
+  // Scroll to section function
+  const scrollToSection = (ref: React.RefObject<HTMLElement>) => {
+    if (ref && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth' });
     }
-  ];
+  };
 
   return (
-    <div className="min-h-screen">
-      {isLoading ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader />
-        </div>
-      ) : (
-        <>
-          {/* Hero Section */}
-          <section className="relative min-h-screen flex items-center justify-center overflow-hidden text-white">
-            {/* Video Background */}
-            <div className="absolute inset-0 z-0">
-              <video
-                autoPlay
-                loop
-                muted
-                className="w-full h-full object-cover filter blur-xs"
+    <div className="relative">
+      {/* Add the particle background */}
+      <ParticleBackground />
+
+      {/* Fixed navigation indicator inspired by Tricky Knot */}
+      <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-50 hidden lg:block">
+        <div className="flex flex-col items-center gap-6">
+          {['Hero', 'Mission', 'Features', 'Story', 'Contact'].map((item, idx) => (
+            <motion.button
+              key={idx}
+              className="group relative flex items-center"
+              onClick={() => scrollToSection([heroRef, missionRef, featuresRef, storyRef, getStartedRef][idx])}
+              whileHover={{ scale: 1.1 }}
+            >
+              <div 
+                className={`w-3 h-3 rounded-full ${activeSection === idx ? 'bg-blue-400' : 'bg-blue-500 bg-opacity-30'} transition-colors duration-300`}
+              />
+              <span 
+                className="absolute right-full mr-4 text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap"
+                style={{ textShadow: '0 0 5px rgba(0,0,0,0.5)' }}
               >
-                <source src="/bg.mp4" type="video/mp4" />
-              </video>
-            </div>
+                {item}
+              </span>
+            </motion.button>
+          ))}
+          <div className="mt-2 h-24 w-0.5 bg-gradient-to-b from-blue-500 to-transparent"></div>
+        </div>
+      </div>
 
-            <div className="container mx-auto px-4 z-10 flex flex-col items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-5xl md:text-7xl font-bold mb-6">
-                  <MorphingText texts={morphingTexts} />
-                </h1>
+      {/* Hero Section - without sun effect */}
+      <section 
+        ref={heroRef}
+        className="relative h-screen w-full flex items-center justify-center overflow-hidden"
+      >
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-900 to-blue-950"></div>
+          <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5"></div>
+        </div>
+        
+        {/* Water reflection effect - kept this part for the water surface effect */}
+        <div className="absolute left-0 right-0 bottom-0 h-[35%] z-1 overflow-hidden">
+          {/* Reflection gradient with better blending */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-700/5 to-blue-900/40"></div>
+          
+          {/* Dynamic ripple effect simulation */}
+          <div className="absolute inset-0">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <motion.div
+                key={`ripple-layer-${i}`}
+                className="absolute inset-0 bg-[url('/ripple.png')] bg-repeat opacity-20"
+                animate={{ 
+                  backgroundPositionX: ["0%", i % 2 === 0 ? "100%" : "-100%"],
+                  backgroundPositionY: [i % 2 === 0 ? "0%" : "10%", i % 2 === 0 ? "10%" : "0%"]
+                }}
+                transition={{ 
+                  duration: 15 + (i * 5), 
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  ease: "linear"
+                }}
+                style={{
+                  backgroundSize: `${1000 + (i * 200)}px ${200 + (i * 50)}px`,
+                  opacity: 0.1 + (i * 0.05)
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Enhanced shimmer effect for water */}
+          <div className="absolute inset-0">
+            {Array.from({ length: 30 }).map((_, i) => (
+              <motion.div 
+                key={`shimmer-${i}`}
+                className="absolute bg-white rounded-full blur-sm"
+                style={{ 
+                  width: `${Math.random() * 6 + 2}px`, 
+                  height: `${Math.random() * 2 + 1}px`, 
+                  left: `${Math.random() * 100}%`, 
+                  top: `${Math.random() * 100}%`, 
+                  opacity: Math.random() * 0.3 + 0.1
+                }}
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  scale: [0.8, 1, 0.8]
+                }}
+                transition={{ 
+                  duration: Math.random() * 3 + 2, 
+                  repeat: Infinity,
+                  repeatDelay: Math.random() * 5,
+                  delay: Math.random() * 2
+                }}
+              />
+            ))}
+          </div>
+        </div>
 
-                <p className="text-xl md:text-2xl mb-10 max-w-3xl mx-auto text-blue-100">
-                  Open-source, easy-to-deploy and affordable tech to monitor
-                  lake(s) at any scale
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/dashboard">
-                    <InteractiveHoverButton
-                      className="bg-white text-blue-600"
-                    >
-                      Get Started
-                    </InteractiveHoverButton>
-                  </Link>
-                  <Link href="/docs">
-                    <InteractiveHoverButton
-                      className="bg-white text-blue-600"
-                      icon="book"
-                    >
-                      Read Docs
-                    </InteractiveHoverButton>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Our Story Section - Apple Style */}
-          <section 
-            ref={storyContainerRef}
-            className="py-24 min-h-screen flex items-center bg-gradient-to-b from-background to-background relative"
+        {/* Hero content remains unchanged */}
+        <div className="container relative z-10 px-4 mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto text-center"
           >
-            <div className="container mx-auto px-4">
-              <div data-aos="fade-up" className="text-center mb-16">
-                <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Story</h2>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  How Smarter Lakes evolved from an idea to reality
-                </p>
-              </div>
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-6"
+            >
+            </motion.div>
+
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-5xl md:text-7xl font-bold mb-6 text-white"
+            >
+              <MorphingText texts={morphingText} />
+            </motion.h1>
+
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="text-xl md:text-2xl mb-10 text-blue-100 font-light"
+            >
+              Real-time IoT sensors monitoring water quality,
+              <span className="block">empowering communities to protect their lakes</span>
+            </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.9 }}
+              className="flex flex-col sm:flex-row gap-6 justify-center"
+            >
+              <Link href="/dashboard">
+                <Button size="lg" className="bg-blue-600 text-white px-8 py-6 text-lg hover:bg-blue-700 w-full sm:w-auto">
+                  View Live Data
+                </Button>
+              </Link>
               
-              {/* Sticky Container for Image */}
-              <div className="relative">
-                {/* Progress indicator */}
-                <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-0 bottom-0 w-1">
-                  <div className="h-full w-full bg-gray-200 rounded-full relative">
-                    <div 
-                      className="absolute top-0 left-0 right-0 bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                      style={{ height: `${storyProgress * 100}%` }}
-                    ></div>
+              <Link href="#how-it-works" onClick={(e) => {
+                e.preventDefault();
+                scrollToSection(featuresRef);
+              }}>
+                <Button variant="outline" size="lg" className="bg-transparent text-white border border-white/30 px-8 py-6 text-lg hover:bg-white/10 w-full sm:w-auto">
+                  How It Works
+                </Button>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Animated expanding background video that spans multiple sections with ocean depth gradient */}
+      <motion.div 
+        className="fixed inset-0 z-0 pointer-events-none"
+        initial={{ 
+          opacity: 0,
+          scale: 0.85
+        }}
+        whileInView={{ 
+          opacity: 1,
+          scale: 1
+        }}
+        transition={{ 
+          duration: 1.5,
+          ease: "easeOut"
+        }}
+        viewport={{ once: true, margin: "-25%" }}
+      >
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="w-full h-full object-cover opacity-20"
+        >
+          <source src="/bg.mp4" type="video/mp4" />
+        </video>
+        {/* Deep ocean gradient effect - from surface to deep ocean */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-800/90 via-blue-900/90 to-blue-950/95"></div>
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5"></div>
+            
+        {/* Light rays effect */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.1, 0.2, 0.1] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-0 left-1/4 w-[500px] h-[80vh] bg-gradient-to-b from-blue-400/10 via-blue-300/5 to-transparent rotate-12 transform-gpu"
+          />
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.05, 0.15, 0.05] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute top-0 right-1/3 w-[300px] h-[70vh] bg-gradient-to-b from-blue-400/10 via-blue-300/5 to-transparent -rotate-15 transform-gpu"
+          />
+        </div>
+          
+        {/* Animated floating particles to simulate underwater debris/plankton */}
+        <div className="absolute inset-0 overflow-hidden">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <motion.div 
+              key={i}
+              initial={{ 
+                x: Math.random() * 100 + "%", 
+                y: Math.random() * 100 + "%", 
+                opacity: Math.random() * 0.5 + 0.1,
+                scale: Math.random() * 0.5 + 0.5
+              }}
+              animate={{ 
+                y: [null, Math.random() * 10 - 5 + "%"],
+                x: [null, Math.random() * 10 - 5 + "%"]
+              }}
+              transition={{ 
+                duration: Math.random() * 10 + 10,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+              className="absolute w-1 h-1 bg-blue-200/30 rounded-full"
+              style={{ 
+                width: Math.random() * 4 + 1 + "px",
+                height: Math.random() * 4 + 1 + "px"
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Ambient glowing spots (like bioluminescence) */}
+        <motion.div 
+          initial={{ opacity: 0.3 }}
+          animate={{ opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl"
+        />
+        <motion.div 
+          initial={{ opacity: 0.2 }}
+          animate={{ opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 12, delay: 1, repeat: Infinity }}
+          className="absolute bottom-1/3 right-1/4 w-[30rem] h-[30rem] rounded-full bg-cyan-500/10 blur-3xl"
+        />
+        <motion.div 
+          initial={{ opacity: 0.1 }}
+          animate={{ opacity: [0.1, 0.3, 0.1] }}
+          transition={{ duration: 10, delay: 2, repeat: Infinity }}
+          className="absolute bottom-1/4 left-1/3 w-64 h-64 rounded-full bg-indigo-600/10 blur-3xl"
+        />
+      </motion.div>
+
+      {/* Mission Section - Upper ocean depths (sunlight zone) */}
+      <section 
+        ref={missionRef}
+        className="relative min-h-screen w-full flex items-center py-20 bg-transparent"
+      >
+        {/* Add subtle caustic light effect */}
+        <div className="absolute inset-0 opacity-10">
+          <motion.div 
+            animate={{ 
+              backgroundPosition: ['0% 0%', '100% 100%'] 
+            }}
+            transition={{ 
+              duration: 20, 
+              ease: "linear", 
+              repeat: Infinity,
+              repeatType: "reverse" 
+            }}
+            className="absolute inset-0 bg-[url('/caustics.png')] bg-repeat bg-[length:600px_600px]"
+          />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
+              Our Mission
+            </h2>
+            <Separator className="w-24 h-1 mx-auto bg-blue-500 my-6" />
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto font-light">
+              Preserving and protecting our lakes through technology and community engagement
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 items-center">
+            {/* First column - improved alignment */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="space-y-6 text-white max-w-xl"
+            >
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 relative inline-block">
+                Protecting Our Water Bodies
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-transparent"></span>
+              </h3>
+              
+              <p className="text-lg text-blue-100 leading-relaxed">
+                Urban lakes are critical ecosystems that provide habitat for wildlife, regulate temperature, 
+                and serve as natural stormwater management systems. Yet they face unprecedented threats from 
+                urbanization, pollution, and climate change.
+              </p>
+              
+              <p className="text-lg text-blue-100 leading-relaxed">
+                With real-time monitoring, we enable communities to quickly identify contamination events
+                and take action before they become crises.
+              </p>
+              
+              <div className="pt-4">
+                <Link href="/about">
+                  <Button variant="outline" size="lg" className="bg-transparent text-white border border-blue-400/30 px-8 py-6 text-lg hover:bg-blue-500/10 w-full sm:w-auto">
+                    Learn More About Our Work
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Second column with cards - fixed alignment */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="space-y-6 text-white"
+            >
+              <Card className="border-l-4 border-blue-500 bg-white/5 border-y-0 border-r-0 hover:bg-white/10 transition-colors duration-300">
+                <CardContent className="pt-6 px-6">
+                  <CardTitle className="text-2xl font-bold mb-2 text-left">The Challenge</CardTitle>
+                  <CardDescription className="text-gray-300 text-base text-left">
+                    Lakes across India face unprecedented threats from pollution, encroachment, 
+                    and neglect. Traditional monitoring is expensive and inconsistent.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-purple-500 bg-white/5 border-y-0 border-r-0 hover:bg-white/10 transition-colors duration-300">
+                <CardContent className="pt-6 px-6">
+                  <CardTitle className="text-2xl font-bold mb-2 text-left">Our Solution</CardTitle>
+                  <CardDescription className="text-gray-300 text-base text-left">
+                    An affordable, open-source monitoring system that provides real-time data
+                    on water quality, enabling quick responses to contamination events.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-green-500 bg-white/5 border-y-0 border-r-0 hover:bg-white/10 transition-colors duration-300">
+                <CardContent className="pt-6 px-6">
+                  <CardTitle className="text-2xl font-bold mb-2 text-left">The Vision</CardTitle>
+                  <CardDescription className="text-gray-300 text-base text-left">
+                    A network of monitored lakes across India, protected by engaged communities
+                    with access to actionable data and resources.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+          
+          {/* Key statistics row */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto"
+          >
+            {[
+              { label: "Lakes monitored", value: "50+" },
+              { label: "Sensors deployed", value: "200+" },
+              { label: "Data points/day", value: "48K" },
+              { label: "Communities engaged", value: "25+" }
+            ].map((stat, idx) => (
+              <div key={idx} className="text-center">
+                <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
+                <p className="text-sm text-blue-300">{stat.label}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+      
+      {/* Features Section - transition to deeper water (twilight zone) */}
+      <section 
+        ref={featuresRef}
+        className="relative min-h-screen flex items-center py-20 bg-transparent"
+      >
+        {/* Add a gradient overlay to simulate deeper water */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-blue-950/70 to-indigo-950/80"></div>
+        
+        {/* Add some floating particles in this section */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <motion.div 
+              key={`feature-particle-${i}`}
+              initial={{ 
+                x: Math.random() * 100 + "%", 
+                y: Math.random() * 100 + "%", 
+                opacity: 0.3,
+                scale: Math.random() * 0.5 + 0.5
+              }}
+              animate={{ 
+                y: [null, `${Math.random() * 20 - 10}%`],
+                x: [null, `${Math.random() * 20 - 10}%`]
+              }}
+              transition={{ 
+                duration: Math.random() * 15 + 15,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+              className="absolute w-2 h-2 bg-blue-300/20 rounded-full blur-[1px]"
+            />
+          ))}
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-20"
+          >
+            <motion.h2 
+              initial={{ y: -20, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="text-3xl md:text-5xl font-bold mb-4 text-white"
+            >
+              How It Works
+            </motion.h2>
+            
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Separator className="w-24 h-1 mx-auto bg-blue-500 my-6" />
+            </motion.div>
+            
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="text-xl text-gray-300 max-w-3xl mx-auto"
+            >
+              A complete ecosystem for lake monitoring and preservation
+            </motion.p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ 
+                  duration: 0.7, 
+                  delay: index * 0.15, 
+                  type: "spring", 
+                  stiffness: 50 
+                }}
+                whileHover={{ 
+                  scale: 1.03, 
+                  transition: { duration: 0.2 } 
+                }}
+              >
+                <Card className="bg-white/10 border-0 shadow-xl h-full group hover:bg-white/20 transition-all duration-300 overflow-hidden relative">
+                  {/* Animated gradient border on hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 animate-gradient-x" 
+                         style={{ maskImage: 'linear-gradient(to bottom, transparent, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black, transparent)' }}>
+                    </div>
+                  </div>
+                  
+                    <CardHeader>
+                    <motion.div 
+                      className="mb-2 p-3 rounded-lg bg-white/10 inline-flex items-center gap-4 relative overflow-hidden w-full"
+                    >
+                      {/* Pulsing effect behind icon */}
+                      <span className="absolute inset-0 bg-white/0 group-hover:bg-white/20 rounded-lg transform scale-0 group-hover:scale-100 transition-all duration-700"></span>
+                      {feature.icon}
+                      <h3 className="text-xl font-semibold text-white group-hover:text-blue-300 transition-colors duration-300">
+                      {feature.title}
+                      </h3>
+                    </motion.div>
+                    </CardHeader>
+                  
+                  <CardContent>
+                    <p className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Our Story Section - deep ocean (midnight zone) */}
+      <section 
+        ref={storyRef} 
+        className="relative min-h-screen flex items-center py-20 bg-gradient-to-b from-indigo-950/80 to-blue-950/70"
+      >
+        {/* Add a more visible background overlay - keeping this for gradient effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-800/20 via-indigo-900/30 to-blue-900/40"></div>
+
+        {/* Remove the animated glowing effect that was here */}
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
+              Our Story
+            </h2>
+            <Separator className="w-24 h-1 mx-auto bg-purple-400 my-6" />
+            <p className="text-xl text-gray-100 max-w-3xl mx-auto">
+              How Namma Lakes evolved from an idea to reality
+            </p>
+          </motion.div>
+
+          <div className="relative mt-20">
+            {/* Timeline Line - keeping the brighter gradient */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-gradient-to-b from-blue-400 to-purple-400 shadow-[0_0_10px_rgba(147,51,234,0.5)]"></div>
+            
+            {/* Timeline Items - keeping these the same */}
+            <div className="space-y-24">
+              {storyPhases.map((phase, index) => {
+                const isEven = index % 2 === 0;
+                
+                return (
+                  <motion.div 
+                    initial={{ opacity: 0, x: isEven ? -30 : 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    key={index} 
+                    className="relative flex items-center"
+                  >
+                    {/* Timeline Point - keeping the glow */}
+                    <motion.div 
+                      className="absolute left-1/2 transform -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 flex items-center justify-center text-2xl shadow-lg z-20"
+                      whileHover={{ scale: 1.1 }}
+                      style={{ boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}
+                    >
+                      {phase.icon}
+                    </motion.div>
                     
-                    {/* Progress dots */}
-                    {[0, 0.2, 0.4, 0.6, 0.8].map((point, index) => (
-                      <div 
-                        key={index}
-                        className={`absolute w-6 h-6 left-1/2 transform -translate-x-1/2 rounded-full transition-all duration-300 ease-out ${storyProgress >= point ? 'bg-blue-500' : 'bg-gray-300'}`}
-                        style={{ top: `${point * 100}%` }}
-                      ></div>
-                    ))}
+                    {/* Content - keeping the style */}
+                    <div className={`w-full flex ${isEven ? 'justify-end' : 'justify-start'}`}>
+                      <Card className={`w-5/6 md:w-2/5 bg-white/15 backdrop-blur-sm border border-white/10 shadow-xl ${
+                        isEven ? 'mr-16 md:mr-[calc(50%-2rem)]' : 'ml-16 md:ml-[calc(50%-2rem)]'
+                      }`}
+                      style={{ boxShadow: '0 4px 30px rgba(79, 70, 229, 0.2)' }}
+                      >
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-2xl font-bold text-white">{phase.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-gray-200">{phase.description}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Get Started Section */}
+      <section 
+        ref={getStartedRef}
+        className="relative min-h-screen flex items-center py-20 bg-gradient-to-b from-gray-900 to-black"
+      >
+        <div className="absolute inset-0 z-0">
+          <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-30">
+            <source src="/bg.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+        </div>
+
+        <div className="container relative z-10 mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+              className="text-white"
+            >
+              <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                Join Our Movement
+              </h2>
+              <Separator className="w-24 h-1 bg-blue-500 my-6" />
+              
+              <p className="text-xl text-gray-300 mb-8">
+                Whether you're a community member, technologist, researcher or educator, 
+                there's a place for you in the Namma Lakes ecosystem.
+              </p>
+              
+              <div className="space-y-6 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-600/20 p-2 rounded-lg">
+                    <Droplets className="h-7 w-7 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-white">Deploy a Sensor</h3>
+                    <p className="text-gray-300">Install and maintain a sensor node at your local lake</p>
                   </div>
                 </div>
                 
-                {/* Content split - Image and Text */}
-                <div className="flex flex-col md:flex-row items-center gap-12">
-                  {/* Sticky Image Container */}
-                  <div className="w-full md:w-1/2 sticky top-24 h-[70vh] flex items-center justify-center overflow-hidden rounded-2xl mb-12 md:mb-0">
-                    <div className="relative w-full h-full bg-gray-100 rounded-2xl overflow-hidden">
-                      {/* Show all images but control opacity and scale based on progress */}
-                      {storyPhases.map((phase, index) => (
-                        <div 
-                          key={index}
-                          className={`absolute inset-0 transition-all duration-700 ease-in-out ${
-                            index === storyPhase ? phase.imageClassName : 'opacity-0 scale-90'
-                          }`}
-                        >
-                          {/* Placeholder for actual images */}
-                          <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-800 text-xl font-bold">
-                            {phase.imageAlt}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                <div className="flex items-center gap-4">
+                  <div className="bg-green-600/20 p-2 rounded-lg">
+                    <Users className="h-7 w-7 text-green-400" />
                   </div>
-                  
-                  {/* Scrolling Content */}
-                  <div className="w-full md:w-1/2 space-y-64">
-                    {storyPhases.map((phase, index) => (
-                      <div 
-                        key={index} 
-                        className={`h-screen flex items-center transition-opacity duration-500 ${
-                          index === storyPhase ? 'opacity-100' : 'opacity-70'
-                        }`}
-                      >
-                        <div className="px-6 py-12">
-                          <div className="text-sm font-medium text-blue-600 mb-2">Phase {index + 1}</div>
-                          <h3 className="text-3xl font-bold mb-4">{phase.title}</h3>
-                          <p className="text-lg text-gray-700">{phase.description}</p>
-                        </div>
-                      </div>
-                    ))}
+                  <div>
+                    <h3 className="font-semibold text-lg text-white">Volunteer</h3>
+                    <p className="text-gray-300">Contribute your skills in development, hardware, or outreach</p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Technology Evolution Section */}
-          <section className="py-24 bg-gray-50 overflow-hidden">
-            <div className="container mx-auto px-4">
-              <div data-aos="fade-up" className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">Evolution of Our Solution</h2>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  From concept to a comprehensive lake monitoring system
-                </p>
+                
+                <div className="flex items-center gap-4">
+                  <div className="bg-purple-600/20 p-2 rounded-lg">
+                    <LineChart className="h-7 w-7 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-white">Use Our Data</h3>
+                    <p className="text-gray-300">Access our API for research, education or policy-making</p>
+                  </div>
+                </div>
               </div>
               
-              {/* Horizontal scrolling cards */}
-              <div className="relative w-full" data-aos="fade-left">
-                <div className="flex overflow-x-auto pb-12 snap-x snap-mandatory hide-scrollbar">
-                  <div className="snap-center min-w-[320px] md:min-w-[400px] p-4 flex-shrink-0">
-                    <div className="bg-white p-6 rounded-xl shadow-md h-full">
-                      <div className="text-blue-600 text-3xl mb-4">01</div>
-                      <h3 className="text-xl font-bold mb-3">Initial Concept</h3>
-                      <p className="text-gray-700">Basic water quality sensors connected to a simple cloud dashboard.</p>
-                      <div className="mt-6 h-40 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-400">Initial Concept Sketch</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="snap-center min-w-[320px] md:min-w-[400px] p-4 flex-shrink-0">
-                    <div className="bg-white p-6 rounded-xl shadow-md h-full">
-                      <div className="text-blue-600 text-3xl mb-4">02</div>
-                      <h3 className="text-xl font-bold mb-3">Prototype</h3>
-                      <p className="text-gray-700">First working model with ESP8266 and basic sensors in waterproof housing.</p>
-                      <div className="mt-6 h-40 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-400">Prototype Image</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="snap-center min-w-[320px] md:min-w-[400px] p-4 flex-shrink-0">
-                    <div className="bg-white p-6 rounded-xl shadow-md h-full">
-                      <div className="text-blue-600 text-3xl mb-4">03</div>
-                      <h3 className="text-xl font-bold mb-3">Field Testing</h3>
-                      <p className="text-gray-700">Deployment of multiple units with solar power in controlled environments.</p>
-                      <div className="mt-6 h-40 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-400">Field Testing Photo</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="snap-center min-w-[320px] md:min-w-[400px] p-4 flex-shrink-0">
-                    <div className="bg-white p-6 rounded-xl shadow-md h-full">
-                      <div className="text-blue-600 text-3xl mb-4">04</div>
-                      <h3 className="text-xl font-bold mb-3">Data Platform</h3>
-                      <p className="text-gray-700">Development of comprehensive dashboard and mobile app for data analysis.</p>
-                      <div className="mt-6 h-40 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-400">Dashboard Screenshot</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="snap-center min-w-[320px] md:min-w-[400px] p-4 flex-shrink-0">
-                    <div className="bg-white p-6 rounded-xl shadow-md h-full">
-                      <div className="text-blue-600 text-3xl mb-4">05</div>
-                      <h3 className="text-xl font-bold mb-3">Full System</h3>
-                      <p className="text-gray-700">Complete ecosystem with sensors, alert systems, and community engagement tools.</p>
-                      <div className="mt-6 h-40 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-400">Full System Diagram</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/get-involved">
+                  <Button variant="default" size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 hover:from-blue-700 hover:to-purple-700">
+                    Get Involved
+                  </Button>
+                </Link>
+                <Link href="/github" target="_blank">
+                  <Button variant="outline" size="lg" className="bg-white/10 text-white border border-white/20 hover:bg-white/20">
+                    View on GitHub
+                  </Button>
+                </Link>
               </div>
-            </div>
-          </section>
+            </motion.div>
 
-          {/* Impact Section */}
-          <section className="py-20 bg-blue-50">
-            <div className="container mx-auto px-4">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                className="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-900"
-              >
-                Making a Difference Together
-              </motion.h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {impact.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                  >
-                    <Card className="p-6 h-full hover:shadow-lg transition-shadow duration-300 text-center">
-                      <div className="flex justify-center mb-4">
-                        {item.icon}
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                      <p className="text-gray-600">{item.description}</p>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-
-          {/* FAQ Section */}
-          <section className="py-20 bg-gray-50">
-            <div className="container mx-auto px-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900">
-                Frequently Asked Questions
-              </h2>
-              <div className="space-y-4">
-                <Accordion type="single" collapsible>
-                  <AccordionItem value="item-1">
-                    <AccordionTrigger>What is the purpose of this project?</AccordionTrigger>
-                    <AccordionContent>
-                    The project aims to provide an open-source, scalable solution for monitoring lake contamination in real-time using distributed network systems.
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-                <Accordion type="single" collapsible>
-              <AccordionItem value="item-1">
-                <AccordionTrigger>How does real-time monitoring work?</AccordionTrigger>
-                <AccordionContent>
-                The system collects data from sensors placed in the lake and sends it to a centralized server using a Raspberry Pi and ESP8266.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <Accordion type="single" collapsible>
-              <AccordionItem value="item-1">
-                <AccordionTrigger>Is it accurate?</AccordionTrigger>
-                <AccordionContent>
-                  Yes. It is accurate upto 95%.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <Accordion type="single" collapsible>
-              <AccordionItem value="item-1">
-                <AccordionTrigger>How can I contribute to the project?</AccordionTrigger>
-                <AccordionContent>
-                You can contribute by submitting pull requests on GitHub.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-              </div>
-            </div>
-          </section>
-
-          {/* Call to Action */}
-          <section className="py-20 bg-blue-900 text-white">
-            <div className="container mx-auto px-4 text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                className="max-w-3xl mx-auto"
-              >
-                <h2 className="text-3xl md:text-4xl font-bold mb-6">Be Part of the Change</h2>
-                <p className="text-xl mb-8 text-blue-100">
-                  Join our community of lake guardians and help protect our water resources for future generations
-                </p>
-                <Button
-                  size="lg"
-                  className="bg-white text-blue-900 hover:bg-blue-50 px-8 py-6 text-lg rounded-full"
-                >
-                  Get Involved Today
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+            >
+              <Card className="bg-white/5 border border-white/10 shadow-2xl overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold text-white">Questions? We've got answers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="item-1" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          What is the purpose of this project?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          Namma Lakes provides an open-source, scalable solution for monitoring lake water quality in
+                          real-time using distributed sensor networks. Our goal is to democratize environmental monitoring
+                          and engage communities in protecting their local water bodies.
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-2" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          How does real-time monitoring work?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          Our system uses waterproof sensor nodes containing multiple sensors that measure parameters like pH, temperature,
+                          dissolved oxygen, and turbidity. Data is transmitted via cellular/LoRaWAN networks to our cloud platform,
+                          where it's analyzed and displayed on our dashboard in real-time.
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-3" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          How accurate are the sensors?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          Our sensors achieve up to 95% accuracy compared to professional-grade equipment. We regularly calibrate
+                          sensors and compare readings with laboratory tests to ensure reliability. The platform also employs
+                          anomaly detection algorithms to flag suspect readings.
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-4" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          How can I contribute to the project?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          You can contribute by deploying a sensor node in your community, volunteering your technical skills,
+                          organizing awareness campaigns, or contributing to our open-source codebase on GitHub. Visit our
+                          "Get Involved" page for specific opportunities.
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-5" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          What is the cost of implementing a sensor node?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          A basic sensor node costs approximately ₹7,000-15,000 ($85-$180) depending on the sensors used
+                          and your location. This is significantly cheaper than commercial alternatives that can cost 
+                          10-20 times more. We provide full build instructions and support for DIY implementation.
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-6" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          Is the data publicly available?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          Yes! All water quality data is available through our open API. We believe in data transparency
+                          and accessibility. Researchers, students, and policy makers can freely use our data with appropriate
+                          attribution. Sensitive location data for certain protected sites may have limited access.
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-7" className="border-b border-white/10">
+                        <AccordionTrigger className="text-white hover:no-underline py-4">
+                          How long do sensor nodes last?
+                        </AccordionTrigger>
+                        <AccordionContent className="text-gray-300">
+                          With proper maintenance, our sensor nodes can last 2-3 years. Solar-powered nodes reduce battery
+                          replacements, though sensors themselves need periodic calibration and cleaning. We've designed
+                          the system for easy maintenance by community volunteers.
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="text-center mt-24"
+          >
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
+              "When we heal our lakes, we heal our communities and our future."
+            </p>
+            
+            <p className="text-white font-medium">— Namma Lakes Team</p>
+            
+            <div className="mt-12 flex justify-center">
+              <Link href="#top" onClick={(e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}>
+                <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-white/10">
+                  <ArrowDown className="h-4 w-4 rotate-180 mr-2" /> Back to top
                 </Button>
-              </motion.div>
+              </Link>
             </div>
-          </section>
-        </>
-      )}
+          </motion.div>
+        </div>
+      </section>
     </div>
   );
 }
+
+// Magnetic button component inspired by Tricky Knot
+const MagneticButton = ({ children }: { children: React.ReactNode }) => {
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!buttonRef.current) return;
+    
+    const { clientX, clientY } = e;
+    const { left, top, width, height } = buttonRef.current.getBoundingClientRect();
+    const x = clientX - (left + width / 2);
+    const y = clientY - (top + height / 2);
+    
+    setPosition({ x, y });
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const magneticStrength = 30;
+  const dampening = 5;
+
+  return (
+    <motion.div
+      ref={buttonRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      animate={{
+        x: isHovered ? position.x / dampening : 0,
+        y: isHovered ? position.y / dampening : 0,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 150,
+        damping: 15,
+        mass: 0.1,
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
